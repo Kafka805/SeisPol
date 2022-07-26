@@ -4,9 +4,9 @@
 %	  filter is lowpass.  Similarly, if the upper limit is zero,
 %	  the filter is highpass.  If both limits are set, the filter
 %	  will be bandpass.
-%
+%       
 %	  y = FILBUTT(Data,Samp_Rate,Low_Limit,High_Limit)
-%
+%       (c) Em Schnorr, 2022
 function [filtered] = filbutt(Data,Samp_Rate,Low_Limit,High_Limit)
 
 Nyquist=Samp_Rate/2;
