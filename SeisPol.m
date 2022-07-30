@@ -248,8 +248,8 @@ function [dlp, dpp, azimuthal, incident] = eigenAngles(east,north,vert)
     [eVecs,eVals] = eig(CM);
     
     [v,d] = order(eVecs,eVals); %Calls the order function to organize the eigs
-    dlp = [1 - ((d(2) + d(3)) / (d(1)))]; %Rectilinear polarization factor
-    dpp = [1 - ((d(3))/(d(1) + d(2)))]; %Planar polarization facator
+    dlp = [1 - ((d(2) + d(3)) / (2*d(1)))]; %Rectilinear polarization factor
+    dpp = [1 - ((2*d(3))/(d(1) + d(2)))]; %Planar polarization facator
     alpha = v(1,1)/norm(v(:,1)); %direction cosine of the largest eigenvalue
     beta = v(1,2)/norm(v(:,1)); %direction cosine of the 2nd eigenvalue
     gamma = v(1,3)/norm(v(:,1)); %direction cosine of the 3rd eigenvalue
