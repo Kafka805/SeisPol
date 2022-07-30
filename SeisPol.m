@@ -67,31 +67,35 @@ if isempty(isMat) == 1
         save(fV, 'Vert_raw')
         disp('Saved '+fV+' in current working directory.')
         disp('Conversion done, continuing analysis' + newline)
+        
+    elseif matches(resp,'abort') == 1
+        return
+        
     end
             
-elseif isempty(isMat) == 0
-    disp('Importing .mat files...' + newline)
-    
-    load(fileEast);
-    load(fileNorth);
-    load(fileVert);
-    
-    BHE = [cat(1,East_raw.d) cat(1,East_raw.t)];
-    nameEast = string(append(East_raw(1).NetworkCode, '.',...
-        strtrim(East_raw(1).StationIdentifierCode),'.',...
-        East_raw(1).ChannelIdentifier,'.',num2str(East_raw(1).RecordStartTime(2))));
-    
-    BHN = [cat(1,North_raw.d) cat(1,North_raw.t)];
-    nameNorth = string(append(North_raw(1).NetworkCode, '.',...
-        strtrim(North_raw(1).StationIdentifierCode),'.',...
-        North_raw(1).ChannelIdentifier,'.',num2str(North_raw(1).RecordStartTime(2))));
-    
-    BHZ = [cat(1,Vert_raw.d) cat(1,Vert_raw.t)];
-    nameVert = string(append(Vert_raw(1).NetworkCode, '.',...
-        strtrim(Vert_raw(1).StationIdentifierCode),'.',...
-        Vert_raw(1).ChannelIdentifier,'.',num2str(Vert_raw(1).RecordStartTime(2))));
-    
-end
+    elseif isempty(isMat) == 0
+        disp('Importing .mat files...' + newline)
+
+        load(fileEast);
+        load(fileNorth);
+        load(fileVert);
+
+        BHE = [cat(1,East_raw.d) cat(1,East_raw.t)];
+        nameEast = string(append(East_raw(1).NetworkCode, '.',...
+            strtrim(East_raw(1).StationIdentifierCode),'.',...
+            East_raw(1).ChannelIdentifier,'.',num2str(East_raw(1).RecordStartTime(2))));
+
+        BHN = [cat(1,North_raw.d) cat(1,North_raw.t)];
+        nameNorth = string(append(North_raw(1).NetworkCode, '.',...
+            strtrim(North_raw(1).StationIdentifierCode),'.',...
+            North_raw(1).ChannelIdentifier,'.',num2str(North_raw(1).RecordStartTime(2))));
+
+        BHZ = [cat(1,Vert_raw.d) cat(1,Vert_raw.t)];
+        nameVert = string(append(Vert_raw(1).NetworkCode, '.',...
+            strtrim(Vert_raw(1).StationIdentifierCode),'.',...
+            Vert_raw(1).ChannelIdentifier,'.',num2str(Vert_raw(1).RecordStartTime(2))));
+
+    end
     
 stationName = string(strtrim(East_raw(1).StationIdentifierCode));
 sr = East_raw(1).SampleRate
@@ -146,29 +150,29 @@ sr = East_raw(1).SampleRate
     analysisFrame = [inspect.time(1) inspect.time(1)+period];
     
     %calculate the number of outputs for variable initialization:
-    numOuts = ceil((inspect.time(end) - inspect.time(1)) / frameShift); 
+    numOuts = ceil((inspect.time(end) - inspect.time(1)) / frameShift);
     
-    %initialize variables for the loop. Creating properly sized variables saves run-time and memory.
-    rectilinearity = zeros(numOuts,1); 
+    %initialize variables for the loop
+    rectilinearity = zeros(numOuts,1);
     planar = zeros(numOuts,1);
     azimuth = zeros(numOuts,1);
     incident = zeros(numOuts,1);
 
     %The tapered cosine window method. We'll blend the edges with 0.5
-    %amplitude scaling.
-    pointWindow = (seconds(period)*sr)+1;
+    %   amplitude scaling.
+    pointWindow = (seconds(period)*sr);
     cTW = tukeywin(pointWindow, 0.5);
     
-    
+    div = pointWindow/2;
+   
 % The loop performs all the relevant analytic operations and compiles the results.
 for idx = 1:numOuts
-    wndw = isbetween(inspect.time,analysisFrame(1),analysisFrame(2));
-    if length(cTW) ~= length(inspect.E(wndw))
-        cTW = tukeywin(length(inspect.E(wndw)), 0.5);
+    %wndw = isbetween(inspect.time,analysisFrame(1),analysisFrame(2));
+    if length(cTW) ~= length(inspect.E(div))
+        cTW = tukeywin(length(inspect.E(div)), 0.5);
     end
         [rectilinearity(idx),planar(idx),azimuth(idx),incident(idx)] = ...
-            eigenAngles(inspect.E(wndw).*cTW,inspect.N(wndw).*cTW,inspect.Z(wndw).*cTW);
-    analysisFrame = analysisFrame + frameShift;
+            eigenAngles(inspect.E(((idx-1)*div+1):idx*div).*cTW,inspect.N(((idx-1)*div+1):idx*div).*cTW,inspect.Z(((idx-1)*div+1):idx*div).*cTW);
 end
 
 
@@ -202,7 +206,7 @@ a2 = subplot(4,1,2)
     plot(segments,rectilinearity, 'b+')
         hold on
     plot(segments(criterion),rectilinearity(criterion), 'r+')
-    plot(segments,movmean(rectilinearity,(seconds(120)/period) + 1))
+    plot(segments,movmean(rectilinearity,(seconds(360)/period) + 1))
         hold off
          title('Rectilinearity of ' + stationName + ' Signal, ' + string(period) + ' Analysis Window')
     title('Rectilinear Polarization Ratio, DLP')
@@ -224,7 +228,7 @@ a4 = subplot(4,1,4)
     title('Back-Azimuth of ' + stationName + ' Signal with ' + string(period)+ ' Analysis Windows')
     xlabel('Time'), ylabel('Back-Azimuth (degrees)'), axis tight
     
-    linkaxes([a1,a2,a3,a4],'x')
+    %linkaxes([a1,a2,a3,a4],'x')
 %% File writiing syntax
 % If you would like to save more variables, follow the format under the save command.
 % timeBounds = [datest(inspect.time(1)) datest(datetime(inspect.time(end)+seconds(1)))];
