@@ -1,3 +1,6 @@
+# THIS REPOSITORTY IS DEPRECATED
+This project has been converted to python. See https://github.com/Kafka805/SeisPolPy for updates.
+
 # SeisPol
 Dependences: MATLAB Signal Processing Toolbox
 ## Method
